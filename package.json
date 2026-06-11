@@ -18,21 +18,30 @@
   "scripts": {
     "build": "tsup",
     "prepublishOnly": "npm run build",
-    "demo": "tsx demo.ts"
+    "demo": "tsx demo.ts",
+    "run-test": "tsx tests/index.ts"
   },
-  "keywords": ["playwright", "patchright", "captcha", "geetest", "slider"],
+  "keywords": [
+    "playwright",
+    "patchright",
+    "captcha",
+    "geetest",
+    "slider"
+  ],
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "patchright": "^1.59.1",
+    "node-fetch": "^3.3.2",
     "pngjs": "^7.0.0",
-    "sharp": "^0.34.4",
-    "node-fetch": "^3.3.2"
+    "sharp": "^0.34.4"
   },
   "devDependencies": {
     "@types/node": "^25.6.0",
+    "@types/pngjs": "^6.0.5",
+    "fingerprint-chromium-engine": "github:maxlogvn/finger-chromium",
+    "playwright-core": "^1.60.0",
     "tsup": "^8.5.1",
-    "typescript": "^6.0.3",
-    "tsx": "^4.19.0"
+    "tsx": "^4.19.0",
+    "typescript": "^6.0.3"
   }
 }
