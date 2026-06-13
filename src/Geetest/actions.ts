@@ -13,22 +13,52 @@ export class Actions{
         await page.waitForSelector('.geetest_bg', { timeout: 10_000 });
     }
 
-    public async slideToPosition(position : number){
+    public async slideToPosition(position: number): Promise<void> {
         const page = this.page;
-        const button =  page.locator('.geetest_btn');
-        // Lấy tọa độ của nút trên màn hình
+        const button = page.locator('.geetest_btn');
         const boundingBox = await button.boundingBox();
         if (!boundingBox) throw new Error('Không tìm thấy nút kéo');
 
-        // Tính tọa độ trung tâm của nút
         const startX = boundingBox.x + boundingBox.width / 2;
         const startY = boundingBox.y + boundingBox.height / 2;
-        // Nhấn chuột vào nút rồi kéo đến vị trí đích
+
+        // Di chuyển chuột đến nút, nhấn giữ
         await page.mouse.move(startX, startY);
         await page.mouse.down();
-        await page.mouse.move(startX + position, startY);
-        await page.mouse.up();
 
+        // Kéo từ từ đến vị trí đích
+        await page.mouse.move(startX + position, startY, { steps: 20 });
+
+        // Thả chuột
+        await page.mouse.up();
+    }
+
+
+    public async validate(): Promise<boolean> {
+        const page = this.page;
+        const selector = ".geetest_result_tips";
+        const failureMsg = [
+            "Please try again",
+            "Vui lòng thử lại",
+            "请再试一次"
+        ];
+
+        // Chờ element kết quả xuất hiện
+        await page.waitForSelector(selector, {timeout: 5_000});
+        const element = await page.$(selector);
+        if (!element) return false;
+
+        const text = await element.textContent();
+
+        // Nếu có text thì kiểm tra có chứa thông báo lỗi không
+        if (text && text.trim() !== '') {
+            const hasFailed = failureMsg.some(msg => text.includes(msg));
+            return !hasFailed;
+        }
+
+        // Không có text thì kiểm tra qua class CSS
+        const className = await page.$eval(selector, el => el.className);
+        return className.includes('success') || !className.includes('error');
     }
 
 }

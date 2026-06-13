@@ -34,3 +34,10 @@ coverage/
 # Temp
 tmp/
 temp/
+.tmp/
+
+# Browser data
+data/
+
+# Debug images
+debug_match.png

@@ -1,5 +1,6 @@
 import { Page } from "playwright-core";
 import { PNG } from 'pngjs';
+import * as fs from "node:fs";
 
 const THRESHOLD = 10;
 
@@ -56,18 +57,36 @@ export class Calculator {
         const slidePNG = PNG.sync.read(slide);
 
         let bestPosition = 0;
-        let minScore = Infinity;
-
-        for (let x = 0; x <= backgroundPNG.width - slidePNG.width; x++) {
+        let maxScore = -1; // tìm score lớn nhất — vùng tương phản nhiều nhất với mảnh ghép là vị trí đúng
+        for (let x = 0;  x <= backgroundPNG.width - slidePNG.width ; x++) {
             const backgroundRegion = this.extractBackgroundRegion(x, backgroundPNG, slidePNG);
             const score = this.countDifferentPixels(backgroundRegion, slidePNG);
-
-            if (score < minScore) {
-                minScore = score;
+            if (score > maxScore) {
+                maxScore = score;
                 bestPosition = x;
             }
         }
 
         return bestPosition;
+    }
+    public async debugSaveMatch(background: Buffer, slide: Buffer, position: number): Promise<void> {
+        const backgroundPNG = PNG.sync.read(background);
+        const slidePNG = PNG.sync.read(slide);
+
+        // Tô màu đỏ lên vùng khớp nhất
+        for (let row = 0; row < slidePNG.height; row++) {
+            for (let col = 0; col < slidePNG.width; col++) {
+                const idx = (row * backgroundPNG.width + position + col) * 4;
+                backgroundPNG.data[idx] = 255;     // R
+                backgroundPNG.data[idx + 1] = 0;   // G
+                backgroundPNG.data[idx + 2] = 0;   // B
+                backgroundPNG.data[idx + 3] = 128; // Alpha — nửa trong suốt
+            }
+        }
+
+        // Lưu ra file để xem
+        const buffer = PNG.sync.write(backgroundPNG);
+        await fs.promises.writeFile('debug_match.png', buffer);
+        console.log('Đã lưu ảnh debug tại debug_match.png');
     }
 }
