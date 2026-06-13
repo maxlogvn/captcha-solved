@@ -1,17 +1,8 @@
 # captcha-solved
 
-GeeTest Slider Captcha Solver cho Playwright / Patchright.
+Giải GeeTest GT4 slider captcha bằng xử lý ảnh thuần — không cần API bên ngoài, không cần dịch vụ trả phí.
 
-Giải mã GeeTest GT4 slider captcha hoàn toàn bằng xử lý ảnh, không cần API bên ngoài.
-
-## Tính năng
-
-- Giải mã GeeTest slider captcha (GT4) tự động.
-- Xử lý ảnh bằng Sharp + PNGjs (grayscale, sharpen, tăng tương phản).
-- Mô phỏng chuyển động chuột tự nhiên (easing, jitter).
-- Retry với exponential backoff.
-- Hỗ trợ debug (xuất ảnh match để kiểm tra).
-- Hoạt động với Playwright và Patchright.
+Hoạt động với cả **Playwright** và **Patchright**.
 
 ## Cài đặt
 
@@ -19,78 +10,77 @@ Giải mã GeeTest GT4 slider captcha hoàn toàn bằng xử lý ảnh, không 
 npm install github:maxlogvn/captcha-solved
 ```
 
-
 ## Sử dụng
 
-### Cơ bản
-
 ```typescript
-import { Solve } from 'playwright-geetest-plugin';
+import { Solve } from 'captcha-solved';
 import { chromium } from 'playwright-core';
 
 const browser = await chromium.launch();
 const page = await browser.newPage();
-await page.goto('https://example.com');
 
-// Giải captcha
-await Solve.geeTest(page);
+await page.goto('https://gt4.geetest.com/demov4/slide-popup-en.html');
 
-// Hoặc giải với số lần retry tùy chỉnh (mặc định: 3)
-await Solve.geeTest(page, 5);
-```
-
-
-### Test
-
-```bash
-npm run run-test
+await Solve.geeTest(page);          // mặc định 3 lần thử
+await Solve.geeTest(page, 5);       // hoặc chỉ định số lần thử
 ```
 
 ## API
 
 ### `Solve.geeTest(page, maxRetry?)`
 
-| Tham số    | Kiểu     | Mặc định | Mô tả |
-|------------|----------|----------|-------|
-| `page`     | `Page`   | -        | Playwright Page instance |
-| `maxRetry` | `number` | `3`      | Số lần thử lại tối đa |
+| Tham số    | Kiểu     | Mặc định | Mô tả                        |
+|------------|----------|----------|------------------------------|
+| `page`     | `Page`   | —        | Playwright / Patchright Page |
+| `maxRetry` | `number` | `3`      | Số lần thử lại tối đa        |
 
-Trả về `Promise<true>` nếu thành công, ném `Error` nếu thất bại.
+Trả về `Promise<true>` nếu thành công. Ném `Error` nếu hết lượt thử.
 
 ## Cách hoạt động
 
-1. Mở khóa captcha (click nút `.geetest_btn_click`).
-2. Lấy URL ảnh background và slice từ CSS.
-3. Crop ảnh nền theo chiều cao của slice.
-4. Áp dụng bộ lọc: grayscale, sharpen, tăng tương phản.
-5. So khớp pixel để tìm vị trí offset của slice trên background.
-6. Kéo slider đến vị trí tìm được với chuyển động mô phỏng người dùng.
-7. Xác nhận kết quả.
-8. Retry nếu thất bại.
+1. Click nút để mở captcha.
+2. Đọc URL ảnh nền và ảnh mảnh ghép từ CSS của trang.
+3. Crop ảnh nền xuống đúng kích thước cần so khớp.
+4. Lọc ảnh: chuyển sang grayscale, tăng độ sắc nét và độ tương phản.
+5. Quét từng cột pixel để tìm vị trí mảnh ghép khớp với ảnh nền.
+6. Kéo slider đến vị trí đó với chuyển động mô phỏng người thật (easing, jitter).
+7. Kiểm tra kết quả — thử lại nếu chưa qua.
 
-## Cấu trúc thư mục
+## Tính năng
 
+- Xử lý ảnh bằng `sharp` + `pngjs`.
+- Mô phỏng chuyển động chuột tự nhiên.
+- Retry với exponential backoff.
+- Hỗ trợ chế độ debug (xuất ảnh kết quả so khớp để kiểm tra thủ công).
+
+## Chạy test
+
+```bash
+npm run run-test
 ```
-src/
-  index.ts          # Entry point - export public API
-  solve.ts          # Lớp Solve chính
-  Geetest/
-    actions.ts      # Điều khiển slider (open, slide, validate)
-    calculator.ts   # Tính toán vị trí slice
-    image.ts        # Xử lý ảnh (fetch, crop, filter)
-  Turnstile/        # (Dự định hỗ trợ Cloudflare Turnstile)
-```
 
-## Xây dựng
+## Build
 
 ```bash
 npm run build
 ```
 
-Build ra `dist/` với cả định dạng CJS (`.cjs`), ESM (`.js`), và type definitions (`.dts`).
+Xuất ra `dist/` với cả ba định dạng: CJS (`.cjs`), ESM (`.js`), và type definitions (`.d.ts`).
 
-## Ghi chú
+## Cấu trúc thư mục
+
+```
+src/
+  index.ts            # Export public API
+  solve.ts            # Class Solve — điểm vào chính
+  Geetest/
+    actions.ts        # Mở captcha, kéo slider, xác nhận kết quả
+    calculator.ts     # Tính vị trí offset của mảnh ghép
+    image.ts          # Tải ảnh, crop, lọc
+  Turnstile/          # Dự kiến hỗ trợ Cloudflare Turnstile
+```
+
+## Lưu ý
 
 - Chỉ hỗ trợ GeeTest slider GT4.
-- Code đang trong giai đoạn phát triển, API có thể thay đổi.
-
+- Đang trong giai đoạn phát triển — API có thể thay đổi giữa các phiên bản.
